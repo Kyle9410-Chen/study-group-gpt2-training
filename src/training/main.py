@@ -1,10 +1,10 @@
 import math
 import time
 import torch
-from transformers import GPT2Tokenizer, GPT2Config, GPT2LMHeadModel, TrainingArguments, TrainerCallback, Trainer, default_data_collator
+from transformers import GPT2TokenizerFast, GPT2Config, GPT2LMHeadModel, TrainingArguments, TrainerCallback, Trainer, default_data_collator
 from datasets import Dataset, load_dataset
 
-TIME_LIMIT_MIN = 28
+TIME_LIMIT_MIN = 27
 HUB_ID = "umineko-uwu/gpt2"
 BLOCK = 1024
 
@@ -18,7 +18,7 @@ HPARAMS = {
     "max_steps": 2000,
 }
 
-def tokenize_fn(tok: GPT2Tokenizer, device: str):
+def tokenize_fn(tok: GPT2TokenizerFast, device: str):
     eos = tok.eos_token_id
     def tokenize(batch):
         ids = tok(batch["text"])["input_ids"]
@@ -50,7 +50,7 @@ class TimeLimit(TrainerCallback):
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    tokenizer: GPT2Tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
     config = GPT2Config.from_pretrained("gpt2")
     model = GPT2LMHeadModel(config)
 
@@ -76,6 +76,9 @@ def main():
         save_strategy="no",
         report_to="wandb",
         run_name="baseline",
+        dataloader_num_workers=8,
+        dataloader_prefetch_factor=4,
+        dataloader_pin_memory=True,
     )
 
     trainer = PerplexityTrainer(
@@ -83,6 +86,7 @@ def main():
         args=args,
         train_dataset=train,
         eval_dataset=val,
+        torch_compile=True,
         data_collator=default_data_collator,
         callbacks=[TimeLimit(TIME_LIMIT_MIN)],
     )
