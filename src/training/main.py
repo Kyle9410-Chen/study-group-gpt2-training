@@ -60,7 +60,7 @@ def main():
     train = train.map(tokenize_fn(tokenizer, device), batched=True, remove_columns=cols)
 
     val = load_dataset("allenai/c4", "en", split="validation", streaming=True)
-    val = val.map(tokenize_fn(tokenizer, device), batch_size=True, remove_columns=cols)
+    val = val.map(tokenize_fn(tokenizer, device), batched=True, remove_columns=cols)
     val = Dataset.from_list(list(val.take(1000)))
 
     args = TrainingArguments(
