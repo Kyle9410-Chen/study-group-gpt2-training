@@ -78,6 +78,7 @@ def main():
         dataloader_num_workers=8,
         dataloader_prefetch_factor=4,
         dataloader_pin_memory=True,
+        torch_compile=True
     )
 
     trainer = PerplexityTrainer(
@@ -85,7 +86,6 @@ def main():
         args=args,
         train_dataset=train,
         eval_dataset=val,
-        torch_compile=True,
         data_collator=default_data_collator,
         callbacks=[TimeLimit(TIME_LIMIT_MIN)],
     )
