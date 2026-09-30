@@ -75,7 +75,6 @@ def main():
         per_device_eval_batch_size=16,
         save_strategy="no",
         report_to="wandb",
-        run_name="baseline",
         dataloader_num_workers=8,
         dataloader_prefetch_factor=4,
         dataloader_pin_memory=True,
