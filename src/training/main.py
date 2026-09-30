@@ -51,9 +51,9 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
-    config = GPT2Config.from_pretrained("gpt2")
+    config = GPT2Config.from_pretrained("gpt2", attn_implementation="sdpa")
     config.vocab_size = 50304 
-    model = GPT2LMHeadModel(config, attn_implementation="sdpa")
+    model = GPT2LMHeadModel(config)
 
     cols = ["text", "timestamp", "url"]
 
