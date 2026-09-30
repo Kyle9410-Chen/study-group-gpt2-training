@@ -1,5 +1,6 @@
 import math
 import time
+import os
 import torch
 from transformers import GPT2TokenizerFast, GPT2Config, GPT2LMHeadModel, TrainingArguments, TrainerCallback, Trainer, default_data_collator
 from datasets import Dataset, load_dataset
@@ -18,15 +19,13 @@ HPARAMS = {
     "max_steps": 2000,
 }
 
-def tokenize_fn(tok: GPT2TokenizerFast, device: str):
+def tokenize(batch, tok):
     eos = tok.eos_token_id
-    def tokenize(batch):
-        ids = tok(batch["text"])["input_ids"]
-        flat = [t for doc in ids for t in doc + [eos]]
-        n = len(flat) // BLOCK * BLOCK
-        chunks = [flat[i:i + BLOCK] for i in range(0, n, BLOCK)]
-        return {"input_ids": chunks, "labels": [c[:] for c in chunks]}
-    return tokenize
+    ids = tok(batch["text"])["input_ids"]
+    flat = [t for doc in ids for t in doc + [eos]]
+    n = len(flat) // BLOCK * BLOCK
+    chunks = [flat[i:i + BLOCK] for i in range(0, n, BLOCK)]
+    return {"input_ids": chunks, "labels": [c[:] for c in chunks]}
 
 class PerplexityTrainer(Trainer):
     def evaluate(self, *arg, **kwargs):
@@ -57,11 +56,12 @@ def main():
     cols = ["text", "timestamp", "url"]
 
     train = load_dataset("allenai/c4", "en", split="train", streaming=True)
-    train = train.map(tokenize_fn(tokenizer, device), batched=True, remove_columns=cols)
-
+    train = train.map(tokenize, batched=True, remove_columns=cols, fn_kwargs={"tok": tokenizer})
     val = load_dataset("allenai/c4", "en", split="validation", streaming=True)
-    val = val.map(tokenize_fn(tokenizer, device), batched=True, remove_columns=cols)
+    val = val.map(tokenize, batched=True, remove_columns=cols, fn_kwargs={"tok": tokenizer})
     val = Dataset.from_list(list(val.take(1000)))
+
+    n_cpu = len(os.sched_getaffinity(0))
 
     args = TrainingArguments(
         output_dir="out/baseline",
@@ -75,7 +75,7 @@ def main():
         per_device_eval_batch_size=16,
         save_strategy="no",
         report_to="wandb",
-        dataloader_num_workers=8,
+        dataloader_num_workers=max(1, n_cpu // 2 - 1),
         dataloader_prefetch_factor=4,
         dataloader_pin_memory=True,
         torch_compile=True
