@@ -11,7 +11,7 @@ BLOCK = 1024
 
 HPARAMS = {
     "per_device_train_batch_size": 16,
-    "gradient_accumulation_steps": 8,
+    "gradient_accumulation_steps": 4,
     "learning_rate": 2.5e-4,
     "warmup_steps": 100,
     "lr_scheduler_type": "cosine",
@@ -51,7 +51,8 @@ def main():
 
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
     config = GPT2Config.from_pretrained("gpt2")
-    model = GPT2LMHeadModel(config)
+    config.vocab_size = 50304 
+    model = GPT2LMHeadModel(config, attn_implementation="sdpa")
 
     cols = ["text", "timestamp", "url"]
 
@@ -78,7 +79,8 @@ def main():
         dataloader_num_workers=max(1, n_cpu // 2 - 1),
         dataloader_prefetch_factor=4,
         dataloader_pin_memory=True,
-        torch_compile=True
+        torch_compile=True,
+        optim="adamw_torch_fused"
     )
 
     trainer = PerplexityTrainer(
