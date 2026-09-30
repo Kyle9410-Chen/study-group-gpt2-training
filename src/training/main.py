@@ -1,5 +1,6 @@
 import math
 import time
+import torch
 from transformers import GPT2Tokenizer, GPT2Config, GPT2LMHeadModel, TrainingArguments, TrainerCallback, Trainer, default_data_collator
 from datasets import Dataset, load_dataset
 
@@ -49,6 +50,12 @@ class TimeLimit(TrainerCallback):
         return control
 
 def main():
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available; refusing to train GPT-2 on CPU")
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+    print(f"Using {torch.cuda.device_count()} GPU(s): {torch.cuda.get_device_name(0)}")
+
     tokenizer: GPT2Tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
     config = GPT2Config().from_pretrained("gpt2")
