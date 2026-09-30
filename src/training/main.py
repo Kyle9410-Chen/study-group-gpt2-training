@@ -26,8 +26,6 @@ def tokenize_fn(tok: GPT2Tokenizer, device: str):
         n = len(flat) // BLOCK * BLOCK
         chunks = [flat[i:i + BLOCK] for i in range(0, n, BLOCK)]
         return {"input_ids": chunks, "labels": [c[:] for c in chunks]}
-
-        return enc
     return tokenize
 
 class PerplexityTrainer(Trainer):
