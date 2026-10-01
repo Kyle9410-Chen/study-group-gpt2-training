@@ -127,7 +127,7 @@ def main():
     out_dir = f"out/{name}"
 
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
-    config = GPT2Config.from_pretrained("gpt2", attn_implementation="sdpa")
+    config = GPT2Config.from_pretrained("gpt2", attn_implementation="kernels-community/flash-attn3")
     config.vocab_size = 50304 
     config.resid_pdrop = config.embd_pdrop = config.attn_pdrop = 0.0
     model = GPT2LMHeadModel(config)
