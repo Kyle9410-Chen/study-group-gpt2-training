@@ -62,9 +62,19 @@ class PerplexityTrainer(Trainer):
                 dict(params=other, use_muon=False, lr=self.args.learning_rate,
                      betas=(self.args.adam_beta1, self.args.adam_beta2), weight_decay=0.0),
             ]
-            cls = MuonWithAuxAdam if dist.is_initialized() else SingleDeviceMuonWithAuxAdam
-            self.optimizer = cls(groups)
-        return self.create_optimizer
+            base = MuonWithAuxAdam if dist.is_initialized() else SingleDeviceMuonWithAuxAdam
+            class MuonCompat(base):
+                """Accept step(closure) like the built-in torch optimizers, so accelerate can call it."""
+                def step(self, closure=None):
+                    loss = None
+                    if closure is not None:
+                        with torch.enable_grad():
+                            loss = closure()
+                    base.step(self)
+                    return loss
+
+            self.optimizer = MuonCompat(groups)
+        return self.optimizer
 
     def log(self, logs, *args, **kwargs):
         if "loss" in logs:
