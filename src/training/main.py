@@ -85,7 +85,7 @@ def main():
     p.add_argument("--grad-accum", type=int, default=1)
     p.add_argument("--run-name", default=None)
     flags = p.parse_args()
-    name = cli.run_name or f"lr{cli.lr:g}"
+    name = flags.run_name or f"lr{flags.lr:g}"
     out_dir = f"out/{name}"
 
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
