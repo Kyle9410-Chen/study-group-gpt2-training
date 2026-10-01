@@ -95,6 +95,7 @@ def main():
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
     config = GPT2Config.from_pretrained("gpt2", attn_implementation="sdpa")
     config.vocab_size = 50304 
+    config.resid_pdrop = config.embd_pdrop = config.attn_pdrop = 0.0
     model = GPT2LMHeadModel(config)
 
     cols = ["text", "timestamp", "url"]
@@ -115,7 +116,7 @@ def main():
         eval_strategy="steps",
         eval_steps=500,
         per_device_train_batch_size=flags.batch,
-        per_device_eval_batch_size=16,
+        per_device_eval_batch_size=50,
         save_strategy="no",
         report_to="wandb",
         dataloader_num_workers=max(1, n_cpu // 2 - 1),
