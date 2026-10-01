@@ -16,7 +16,6 @@ DATA_DIR = "data"
 
 HPARAMS = {
     "per_device_train_batch_size": 64,
-    "learning_rate": 2.5e-4,
     "warmup_steps": 100,
     "lr_scheduler_type": "cosine",
     "weight_decay": 0.01,
@@ -81,8 +80,13 @@ class TimeLimit(TrainerCallback):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--steps", type=int, default=2000, help="max_steps you plan to train")
+    p.add_argument("--steps", type=int, default=2000)
+    p.add_argument("--lr", type=float, default=2.5e-4)
+    p.add_argument("--grad-accum", type=int, default=1)
+    p.add_argument("--run-name", default=None)
     flags = p.parse_args()
+    name = cli.run_name or f"lr{cli.lr:g}"
+    out_dir = f"out/{name}"
 
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
     config = GPT2Config.from_pretrained("gpt2", attn_implementation="sdpa")
@@ -98,9 +102,8 @@ def main():
     print(f"using {n_cpu} cpus")
 
     args = TrainingArguments(
-        output_dir="out/baseline",
+        output_dir=out_dir,
         **HPARAMS,
-        max_steps=int(flags.steps),
         bf16=True,
         tf32=True,
         max_grad_norm=1,
@@ -116,6 +119,10 @@ def main():
         torch_compile=True,
         optim="adamw_torch_fused",
         ddp_find_unused_parameters=False,
+        learning_rate=flags.lr,
+        gradient_accumulation_steps=flags.grad_accum,
+        max_steps=flags.steps,
+        run_name=name
     )
 
     trainer = PerplexityTrainer(
@@ -131,9 +138,9 @@ def main():
     final = trainer.evaluate()
     print(f"final val loss {final['eval_loss']:.3f}  ppl {final['eval_perplexity']:.2f}")
 
-    trainer.save_model("out/baseline")
+    trainer.save_model(out_dir)
     if trainer.is_world_process_zero():
-        tokenizer.save_pretrained("out/baseline")
+        tokenizer.save_pretrained(out_dir)
 
 if __name__ == "__main__":
     main()
