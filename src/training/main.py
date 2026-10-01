@@ -64,8 +64,6 @@ class TimeLimit(TrainerCallback):
         return control
 
 def main():
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
     config = GPT2Config.from_pretrained("gpt2", attn_implementation="sdpa")
     config.vocab_size = 50304 

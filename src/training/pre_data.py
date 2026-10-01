@@ -5,11 +5,11 @@ import time
 
 import numpy as np
 from datasets import load_dataset
-from transformers import GPT2Tokenizer
+from transformers import GPT2TokenizerFast
 
 BLOCK = 1024
 
-def write_tokens(split: str, path: str, n_tokens: int, tok: GPT2Tokenizer, batch_size: int = 1000):
+def write_tokens(split: str, path: str, n_tokens: int, tok: GPT2TokenizerFast, batch_size: int = 1000):
     eos = tok.eos_token_id
     arr = np.memmap(path, dtype=np.uint16, mode="w+", shape=(n_tokens,))
     dataset = load_dataset("allenai/c4", "en", split=split, streaming=True)
@@ -46,7 +46,7 @@ def main():
     args = p.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
-    tok = GPT2Tokenizer.from_pretrained("gpt2")
+    tok = GPT2TokenizerFast.from_pretrained("gpt2")
 
     train_blocks = int(args.steps * args.global_batch)
     train_tokens = train_blocks * BLOCK
