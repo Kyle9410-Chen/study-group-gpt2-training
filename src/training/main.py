@@ -45,10 +45,26 @@ class TokenBlocks(TorchDataset):
  
 
 class PerplexityTrainer(Trainer):
+    _tp_t = None      
+    _tp_step = 0
+
+    def log(self, logs, *args, **kwargs):
+        if "loss" in logs:
+            now = time.time()
+            step = self.state.global_step
+            if self._tp_t is not None and step > self._tp_step:
+                a = self.args
+                gb = a.per_device_train_batch_size * a.gradient_accumulation_steps * a.world_size
+                logs["tok_per_s"] = (step - self._tp_step) * gb * BLOCK / (now - self._tp_t)
+            self._tp_t, self._tp_step = now, step
+        super().log(logs, *args, **kwargs)
+
     def evaluate(self, *arg, **kwargs):
         metrics = super().evaluate(*arg, **kwargs)
         metrics["eval_perplexity"] = math.exp(min(metrics["eval_loss"], 20))
         self.log({"eval_perplexity": metrics["eval_perplexity"]})
+        if self._tp_t is not None:
+            self._tp_t = time.time()
         return metrics
     
 class TimeLimit(TrainerCallback): 
