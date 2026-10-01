@@ -44,6 +44,26 @@ class TokenBlocks(TorchDataset):
 class PerplexityTrainer(Trainer):
     _tp_t = None      
     _tp_step = 0
+    muon_lr = None
+    muon_wd = 0.01
+
+    def create_optimizer(self, *args, **kwargs):
+        if self.muon_lr is None:
+            return super().create_optimizer(*args, **kwargs)
+        if self.optimizer is None:
+            from muon import MuonWithAuxAdam, SingleDeviceMuonWithAuxAdam
+            named = list(self.model.named_parameters())
+            is_hidden = lambda n, p: ".h." in n and p.ndim == 2
+            hidden = [p for n, p in named if is_hidden(n, p)]
+            other = [p for n, p in named if not is_hidden(n, p)]
+            groups = [
+                dict(params=hidden, use_muon=True, lr=self.muon_lr, weight_decay=self.muon_wd),
+                dict(params=other, use_muon=False, lr=self.args.learning_rate,
+                     betas=(self.args.adam_beta1, self.args.adam_beta2), weight_decay=0.0),
+            ]
+            cls = MuonWithAuxAdam if dist.is_initialized() else SingleDeviceMuonWithAuxAdam
+            self.optimizer = cls(groups)
+        return self.create_optimizer
 
     def log(self, logs, *args, **kwargs):
         if "loss" in logs:
@@ -88,8 +108,10 @@ def main():
     p.add_argument("--run-name", default=None)
     p.add_argument("--warmup", type=int, default=100)
     p.add_argument("--batch", type=int, default=64)
+    p.add_argument("--muon-lr", type=float, default=None, help="enable Muon for hidden matrices")
     flags = p.parse_args()
-    name = flags.run_name or f"lr{flags.lr:g}"
+    name = flags.run_name or (f"muon{flags.muon_lr:g}-lr{flags.lr:g}" if flags.muon_lr else f"lr{flags.lr:g}")
+    
     out_dir = f"out/{name}"
 
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
@@ -141,6 +163,7 @@ def main():
         data_collator=default_data_collator,
         callbacks=[TimeLimit(TIME_LIMIT_MIN)],
     )
+    trainer.muon_lr = flags.muon_lr
 
     trainer.train()
     final = trainer.evaluate()
