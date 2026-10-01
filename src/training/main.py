@@ -9,10 +9,10 @@ from datasets import Dataset, load_dataset
 TIME_LIMIT_MIN = 27
 HUB_ID = "umineko-uwu/gpt2"
 BLOCK = 1024
+DATA_DIR = "data"
 
 HPARAMS = {
-    "per_device_train_batch_size": 16,
-    "gradient_accumulation_steps": 4,
+    "per_device_train_batch_size": 64,
     "learning_rate": 2.5e-4,
     "warmup_steps": 100,
     "lr_scheduler_type": "cosine",
@@ -20,13 +20,27 @@ HPARAMS = {
     "max_steps": 2000,
 }
 
-def tokenize(batch, tok):
-    eos = tok.eos_token_id
-    ids = tok(batch["text"])["input_ids"]
-    flat = [t for doc in ids for t in doc + [eos]]
-    n = len(flat) // BLOCK * BLOCK
-    chunks = [flat[i:i + BLOCK] for i in range(0, n, BLOCK)]
-    return {"input_ids": chunks, "labels": [c[:] for c in chunks]}
+class TokenBlocks(TorchDataset):
+    def __init__(self, path: str, block: int = BLOCK):
+        self.path = path
+        self.block = block
+        self.n = os.path.getsize(path) // np.dtype(np.uint16).itemsize // block
+        self.data = None
+    
+    def __len__(self):
+        return self.n
+ 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["data"] = None
+        return state
+ 
+    def __getitem__(self, i):
+        if self.data is None:
+            self.data = np.memmap(self.path, dtype=np.uint16, mode="r")
+        x = torch.from_numpy(self.data[i * self.block:(i + 1) * self.block].astype(np.int64))
+        return {"input_ids": x, "labels": x}
+ 
 
 class PerplexityTrainer(Trainer):
     def evaluate(self, *arg, **kwargs):
@@ -57,13 +71,11 @@ def main():
 
     cols = ["text", "timestamp", "url"]
 
-    train = load_dataset("allenai/c4", "en", split="train", streaming=True)
-    train = train.map(tokenize, batched=True, remove_columns=cols, fn_kwargs={"tok": tokenizer})
-    val = load_dataset("allenai/c4", "en", split="validation", streaming=True)
-    val = val.map(tokenize, batched=True, remove_columns=cols, fn_kwargs={"tok": tokenizer})
-    val = Dataset.from_list(list(val.take(1000)))
+    train = TokenBlocks(os.path.join(DATA_DIR, "train.bin"))
+    val = TokenBlocks(os.path.join(DATA_DIR, "val.bin"))
 
     n_cpu = len(os.sched_getaffinity(0))
+    print(f"using {n_cpu} cpus")
 
     args = TrainingArguments(
         output_dir="out/baseline",
