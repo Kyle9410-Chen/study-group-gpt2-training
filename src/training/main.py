@@ -5,6 +5,7 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import torch
 import numpy as np
+import torch.distributed as dist
 from torch.utils.data import Dataset as TorchDataset
 from transformers import GPT2TokenizerFast, GPT2Config, GPT2LMHeadModel, TrainingArguments, TrainerCallback, Trainer, default_data_collator
 from datasets import load_dataset
@@ -61,7 +62,7 @@ class PerplexityTrainer(Trainer):
                 dict(params=other, use_muon=False, lr=self.args.learning_rate,
                      betas=(self.args.adam_beta1, self.args.adam_beta2), weight_decay=0.0),
             ]
-            cls = MuonWithAuxAdam if dist.is_initialized() else SingleDeviceMuonWithAuxAdam
+            cls = MuonWithAuxAdam if dict.is_initialized() else SingleDeviceMuonWithAuxAdam
             self.optimizer = cls(groups)
         return self.create_optimizer
 
