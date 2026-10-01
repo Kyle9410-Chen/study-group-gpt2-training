@@ -62,7 +62,7 @@ class PerplexityTrainer(Trainer):
                 dict(params=other, use_muon=False, lr=self.args.learning_rate,
                      betas=(self.args.adam_beta1, self.args.adam_beta2), weight_decay=0.0),
             ]
-            cls = MuonWithAuxAdam if dict.is_initialized() else SingleDeviceMuonWithAuxAdam
+            cls = MuonWithAuxAdam if dist.is_initialized() else SingleDeviceMuonWithAuxAdam
             self.optimizer = cls(groups)
         return self.create_optimizer
 
