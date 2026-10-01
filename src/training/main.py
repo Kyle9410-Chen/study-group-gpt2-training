@@ -1,3 +1,4 @@
+import argparse
 import math
 import time
 import os
@@ -19,7 +20,6 @@ HPARAMS = {
     "warmup_steps": 100,
     "lr_scheduler_type": "cosine",
     "weight_decay": 0.01,
-    "max_steps": 2000,
 }
 
 class TokenBlocks(TorchDataset):
@@ -80,6 +80,10 @@ class TimeLimit(TrainerCallback):
         return control
 
 def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--steps", type=int, default=2000, help="max_steps you plan to train")
+    args = p.parse_args()
+
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
     config = GPT2Config.from_pretrained("gpt2", attn_implementation="sdpa")
     config.vocab_size = 50304 
@@ -96,6 +100,7 @@ def main():
     args = TrainingArguments(
         output_dir="out/baseline",
         **HPARAMS,
+        max_steps=int(args.stpes)
         bf16=True,
         tf32=True,
         max_grad_norm=1,
