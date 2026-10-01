@@ -3,6 +3,7 @@ import time
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import torch
+import numpy as np
 from torch.utils.data import Dataset as TorchDataset
 from transformers import GPT2TokenizerFast, GPT2Config, GPT2LMHeadModel, TrainingArguments, TrainerCallback, Trainer, default_data_collator
 from datasets import load_dataset
