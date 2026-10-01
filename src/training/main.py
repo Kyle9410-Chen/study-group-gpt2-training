@@ -79,6 +79,10 @@ class TimeLimit(TrainerCallback):
         return control
 
 def main():
+    if not torch.cuda.is_available():
+        raise RuntimeError(f"CUDA not available: torch {torch.__version__}, built with CUDA {torch.version.cuda}, "
+                           f"CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')}")
+
     p = argparse.ArgumentParser()
     p.add_argument("--steps", type=int, default=2000)
     p.add_argument("--lr", type=float, default=2.5e-4)
