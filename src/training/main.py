@@ -16,7 +16,7 @@ DATA_DIR = "data"
 
 HPARAMS = {
     "lr_scheduler_type": "cosine",
-    "weight_decay": 0.01,
+    "weight_decay": 0.1,
 }
 
 class TokenBlocks(TorchDataset):
@@ -114,7 +114,8 @@ def main():
         logging_steps=10,
         eval_strategy="steps",
         eval_steps=500,
-        per_device_eval_batch_size=flags.batch,
+        per_device_train_batch_size=flags.batch,
+        per_device_eval_batch_size=16,
         save_strategy="no",
         report_to="wandb",
         dataloader_num_workers=max(1, n_cpu // 2 - 1),
@@ -127,7 +128,8 @@ def main():
         gradient_accumulation_steps=flags.grad_accum,
         max_steps=flags.steps,
         run_name=name,
-        warmup_steps=flags.warmup
+        warmup_steps=flags.warmup,
+        adam_beta2=0.95
     )
 
     trainer = PerplexityTrainer(
