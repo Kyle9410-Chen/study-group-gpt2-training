@@ -125,9 +125,9 @@ def main():
     final = trainer.evaluate()
     print(f"final val loss {final['eval_loss']:.3f}  ppl {final['eval_perplexity']:.2f}")
 
+    trainer.save_model("out/baseline")
     if trainer.is_world_process_zero():
-        trainer.model.push_to_hub(HUB_ID)
-        tokenizer.push_to_hub(HUB_ID)
+        tokenizer.save_pretrained("out/baseline")
 
 if __name__ == "__main__":
     main()
