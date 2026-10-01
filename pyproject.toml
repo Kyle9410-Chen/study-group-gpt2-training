@@ -10,7 +10,7 @@ requires-python = ">=3.14"
 dependencies = [
     "accelerate>=1.15.0",
     "datasets>=5.0.1",
-    "kernels>=0.17.1",
+    "kernels>=0.16,<0.17",
     "muon-optimizer>=0.1.0",
     "torch>=2.11.0",
     "transformers>=5.17.0",
