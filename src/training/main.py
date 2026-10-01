@@ -82,7 +82,7 @@ class TimeLimit(TrainerCallback):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--steps", type=int, default=2000, help="max_steps you plan to train")
-    args = p.parse_args()
+    flags = p.parse_args()
 
     tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
     config = GPT2Config.from_pretrained("gpt2", attn_implementation="sdpa")
@@ -100,7 +100,7 @@ def main():
     args = TrainingArguments(
         output_dir="out/baseline",
         **HPARAMS,
-        max_steps=int(args.stpes)
+        max_steps=int(flags.steps),
         bf16=True,
         tf32=True,
         max_grad_norm=1,
@@ -114,7 +114,8 @@ def main():
         dataloader_prefetch_factor=4,
         dataloader_pin_memory=True,
         torch_compile=True,
-        optim="adamw_torch_fused"
+        optim="adamw_torch_fused",
+        ddp_find_unused_parameters=False,
     )
 
     trainer = PerplexityTrainer(
