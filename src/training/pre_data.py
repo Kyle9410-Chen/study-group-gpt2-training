@@ -17,7 +17,7 @@ def write_tokens(split: str, path: str, n_tokens: int, tok: GPT2Tokenizer, batch
     pos, next_report, t0 = 0, 0, time.time()
     for batch in dataset.iter(batch_size=batch_size):
         ids = tok(batch["text"])["input_ids"]
-        flat = np.concatenate([np.asarray(d + [eos], dtype=np.uint16)] for d in ids)
+        flat = np.concatenate([np.asarray(d + [eos], dtype=np.uint16) for d in ids])
         n = min(len(flat), n_tokens - pos)
         arr[pos:pos+n] = flat[:n]
         pos += n
@@ -52,8 +52,8 @@ def main():
     train_tokens = train_blocks * BLOCK
     val_tokens = args.val_blocks * BLOCK
 
-    write_tokens("train", os.path.join("args.out", "train.bin"), train_tokens, tok)
-    write_tokens("validation", os.path.join("args.out", "val.bin"), val_tokens, tok)
+    write_tokens("train", os.path.join(args.out, "train.bin"), train_tokens, tok)
+    write_tokens("validation", os.path.join(args.out, "val.bin"), val_tokens, tok)
 
     with open(os.path.join(args.out, "meta.json"), "w") as f:
         json.dump({
