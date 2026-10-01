@@ -15,8 +15,6 @@ BLOCK = 1024
 DATA_DIR = "data"
 
 HPARAMS = {
-    "per_device_train_batch_size": 64,
-    "warmup_steps": 100,
     "lr_scheduler_type": "cosine",
     "weight_decay": 0.01,
 }
@@ -88,6 +86,8 @@ def main():
     p.add_argument("--lr", type=float, default=2.5e-4)
     p.add_argument("--grad-accum", type=int, default=1)
     p.add_argument("--run-name", default=None)
+    p.add_argument("--warmup", type=int, default=100)
+    p.add_argument("--batch", type=int, default=64)
     flags = p.parse_args()
     name = flags.run_name or f"lr{flags.lr:g}"
     out_dir = f"out/{name}"
@@ -114,7 +114,7 @@ def main():
         logging_steps=10,
         eval_strategy="steps",
         eval_steps=500,
-        per_device_eval_batch_size=16,
+        per_device_eval_batch_size=flags.batch,
         save_strategy="no",
         report_to="wandb",
         dataloader_num_workers=max(1, n_cpu // 2 - 1),
@@ -126,7 +126,8 @@ def main():
         learning_rate=flags.lr,
         gradient_accumulation_steps=flags.grad_accum,
         max_steps=flags.steps,
-        run_name=name
+        run_name=name,
+        warmup_steps=flags.warmup
     )
 
     trainer = PerplexityTrainer(
