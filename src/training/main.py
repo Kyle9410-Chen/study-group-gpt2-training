@@ -109,6 +109,7 @@ def main():
     p.add_argument("--warmup", type=int, default=100)
     p.add_argument("--batch", type=int, default=64)
     p.add_argument("--muon-lr", type=float, default=None, help="enable Muon for hidden matrices")
+    p.add_argument("--muon-wd", type=float, default=0.01)
     flags = p.parse_args()
     name = flags.run_name or (f"muon{flags.muon_lr:g}-lr{flags.lr:g}" if flags.muon_lr else f"lr{flags.lr:g}")
     
@@ -164,6 +165,7 @@ def main():
         callbacks=[TimeLimit(TIME_LIMIT_MIN)],
     )
     trainer.muon_lr = flags.muon_lr
+    trainer.muon_wd = flags.muon_wd
 
     trainer.train()
     final = trainer.evaluate()
