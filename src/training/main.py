@@ -3,8 +3,9 @@ import time
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import torch
+from torch.utils.data import Dataset as TorchDataset
 from transformers import GPT2TokenizerFast, GPT2Config, GPT2LMHeadModel, TrainingArguments, TrainerCallback, Trainer, default_data_collator
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 
 TIME_LIMIT_MIN = 27
 HUB_ID = "umineko-uwu/gpt2"
