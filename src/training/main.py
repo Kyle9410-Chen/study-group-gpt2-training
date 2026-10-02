@@ -16,7 +16,6 @@ BLOCK = 1024
 DATA_DIR = "data"
 
 HPARAMS = {
-    "lr_scheduler_type": "cosine",
     "weight_decay": 0.1,
 }
 
