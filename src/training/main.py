@@ -163,6 +163,8 @@ def main():
         gradient_accumulation_steps=flags.grad_accum,
         max_steps=flags.steps,
         run_name=name,
+        lr_scheduler_type="warmup_stable_decay",
+        lr_scheduler_kwargs={"num_decay_steps": int(flags.steps * 0.4), "decay_type": "linear"},
         warmup_steps=flags.warmup,
         adam_beta2=0.95
     )
